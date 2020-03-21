@@ -1,0 +1,12 @@
+.DS_Store
+
+.virtenv
+.vscode
+
+__pycache__
+
+lib
+
+input/**
+output/**
+!**/.gitkeep
