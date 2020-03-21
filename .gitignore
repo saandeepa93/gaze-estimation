@@ -5,8 +5,7 @@
 
 __pycache__
 
-lib
-
 input/**
 output/**
+models/**
 !**/.gitkeep
