@@ -5,7 +5,13 @@
 
 __pycache__
 
+docs
 input/**
 output/**
 models/**
+ref/
+reports/**
+
+!**/.latex
+!**/.bibtex
 !**/.gitkeep
