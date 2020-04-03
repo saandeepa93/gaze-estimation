@@ -1,108 +1,34 @@
 import numpy as np
-import cv2
-import os
 
 
-def get_initial_p(Xs, Xt):
-    P1 = np.array([
-        [0,0,1,0,0,0],
-        [0,0,0,1,0,0],
-        [1,0,0,0,0,0]
-    ])
+def calc_transformation(mean_landmarks, img_dlib):
+  rot = np.zeros((2, 2))
+  trans = np.zeros((2, 1))
+  scale = np.zeros((2, 1))
 
-    P2 = np.array([
-        [0,0,0,0,1,0],
-        [0,0,0,0,0,1],
-        [0,1,0,0,0,0]
-    ])
+  mean_landmarks = np.hstack((mean_landmarks, \
+    np.ones((mean_landmarks.shape[0], 1)))).astype(np.int)
 
-    Xs = np.vstack((Xs.T,np.ones((1,Xs.shape[0]))))
-    Xt = np.vstack((Xt.T,np.ones((1,Xt.shape[0]))))
+  img_dlib = np.hstack((img_dlib, \
+    np.ones((img_dlib.shape[0], 1)))).astype(np.int)
 
-    Z = np.array([[1,0,0],[0,1,0]])
-    dX = np.matmul(Z,Xt-Xs).flatten()
+  P = np.matmul(np.matmul(np.linalg.inv(np.matmul(img_dlib.T, img_dlib)),\
+     img_dlib.T), mean_landmarks).round(1).T
 
-    J1 = np.matmul(Xt.T,P1)
-    J2 = np.matmul(Xt.T,P2)
-    J = np.vstack((J1,J2))
+  theta = np.arctan(P[1][0]/P[0][0])
 
-    A = np.matmul(J.T,J)
-    b = np.matmul(J.T,dX)
 
-    P = np.pad(np.matmul(np.linalg.inv(A),b),(0,2),'constant')
-    P = np.append(P,1).reshape(3,3)
-    P = np.identity(3)
+  if P[1][0] !=0 and P[1][0]/np.sin(theta) != 0:
+    scale[0, 0] = P[1][0]/np.sin(theta)
+  else:
+    scale[0, 0] = P[0][0]/np.cos(theta)
 
-    Xest = np.matmul(Xt.T,P)
-    Xest /= Xest[:,-1][:,np.newaxis]
-    return P, Xest.T, Xt, Xs
+  if P[1][1] !=0 and P[1][1]/np.cos(theta) != 0:
+    scale[1, 0] = P[1][1]/np.cos(theta)
+  else:
+    scale[1, 0] = -P[0][1]/np.sin(theta)
 
-'''
-    * Define Initial constant matrices to calculate Hessian(A) and b
-    * The optimized matrix operation(Similar to affine) has been derived in the report
-'''
+  trans = P[:-1, -1]
+  rot = P[:-1,:-1]
 
-def get_J(X,P,Xt):
-    P1 = np.array([
-        [1,0,0,0,0,0,-1,0],
-        [0,1,0,0,0,0,0,-1],
-        [0,0,1,0,0,0,0,0]
-    ])
-
-    P2 = np.array([
-        [0,0,0,1,0,0,-1,0],
-        [0,0,0,0,1,0,0,-1],
-        [0,0,0,0,0,1,0,0]
-    ])
-
-    P11 = np.array([
-        [0, 0, 0, 0, 0, 0, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 0, 0, 0, 0, 0 ]
-    ])
-
-    P22 = np.array([
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 1, 1],
-        [0, 0, 0, 1, 1, 1, 0, 0]
-    ])
-
-    P[2][2] = 1
-    X_est = np.matmul(P,Xt)
-    D = X_est[-1, :][:, np.newaxis]
-    X_est /= D.T
-    J1 = (np.matmul(Xt.T,P1) * np.matmul(X_est.T, P11))/D
-    J2 = (np.matmul(Xt.T,P2) * np.matmul(X_est.T, P22))/D
-    return np.asarray(np.vstack((J1,J2))) , X_est, P
-
-'''
-    * Calculates new homography matrix iteratively
-'''
-def get_transformation(Xs,X,iterations):
-    '''
-    Xt is expected to be in clockwise direction
-    '''
-    Xt = np.copy(X)
-    # Xt[[2,3]] = Xt[[3,2]]
-
-    P,_, Xt, Xs = get_initial_p(Xs, Xt)
-
-    residual = 10e8
-    residual_new = residual-1
-    count = iterations
-    while (residual_new != 0 and residual_new < residual) or count > 0:
-        residual = residual_new
-        J,X_est, P = get_J(Xs, P, Xt)
-
-        Z = np.array([[1,0,0],[0,1,0]])
-        dR = np.matmul(Z,Xs-X_est).flatten()
-        residual_new = int(np.matmul(dR.T, dR))
-
-        A = np.matmul(J.T,J)
-        b = np.matmul(J.T,dR)
-
-        dp = np.matmul(np.linalg.inv(A + 0.1 * np.diag(np.diag(A))), b)
-        P += np.append(dp,0).reshape(3,3)
-        count -= 1
-
-    return P
+  return scale, rot, trans

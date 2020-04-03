@@ -1,26 +1,68 @@
-\documentclass{report}
+\documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{multicol}
+\usepackage{mathtools, cuted}
+
+\title{Gaze Detection in the Wild}
+\author{Seedless}
+\date{March 2020}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 \begin{document}
+\maketitle
+\begin{multicols}{2}
+  \section{Models}
 
-\subsection{Patch experts by SIFT}
+\subsection{Patch Experts}
+The job of every patch expert is to spits out the location of patch with
+probability value. For $m$ landmarks, we would train $\pi_m$ patch experts.
+Given an image $\mathcal{I}$, $\pi_m(\mathcal{I})$ returns the location $(x_m,
+y_m)$ of the landmark $m$ for which $\pi_m$ is trained. Given $\boldsymbol{\pi}
+= \left[\pi_1, \dots \pi_m\right]^T$, $\boldsymbol{\pi}(\mathcal{I}) =
+\widetilde{\mathbf{X}}$
+\subsubsection{CNN}
+\subsubsection{Markov}
 
-For each landmark $m$, a patch expert $\pi_m$ is trained by SIFT.
+\subsubsection{Regression model}
+\subsubsection{SIFT}
+
+\subsection{Training}
+Other approaches minimizes the objective function because they calculate the
+error. Our objective is to find such parameters that are as disctinct for each
+patch as possible. If $\mathbf{p}$ is our list of parameters and $\mathbf{x_i}$
+is the list of patches for $y_i$ landmarks, we would like to maximize the
+confidence of the model's prediction of $y_i$ i.e.
+\begin{equation}
+  L(\mathbf{p}) = \sum_i \log P(y_i | x_i, \mathbf{p})
+   - \frac{\Vert{\mathbf{p}}\Vert^2}{2 \sigma^2}
+\end{equation}
+
+Since we would like to maximize the objective function's value, we will be
+applying the SGA - stochastic gradient ascent
+
+\begin{equation}
+    \mathbf{p}^* = \argmax_\mathbf{p}{L(\mathbf{p})} + 5 \log 60 - x \sin \theta \times 40 \arctan \frac{a}{b}
+\end{equation}
+
 
 \subsection{Landmark fitting by descent}
 
-Given an arbitrary image, landmark fitting begins with the assumption that the mean
-shape $\mathbf{X}$ vaguely fits on the image and by working towards minimising the error
-between the patches around these landmarks and the actual landmarks $\widetilde{\mathbf{X}}$.
+Given an arbitrary image, landmark fitting begins with the assumption that the
+mean shape $\mathbf{X}$ vaguely fits on the image and by working towards
+minimising the error between the patches around these landmarks and the actual
+landmarks $\widetilde{\mathbf{X}}$.
 
 \begin{equation}
   \widetilde{\mathbf{x}}_m =  \pi_m(\mathbf{x}_m) - \
 \end{equation}
 
-\subsection{Pose extraction by similarity transformation}
-If $\widetilde{\mathbf{X}}$ is the vector of final, predicted landmarks, then assumption is that
-this vector is ideally obtained by performing similarity transformation of the mean landmark $\mathbf{X}$. That is,
+\section{Pose extraction by similarity transformation}
+If $\widetilde{\mathbf{X}}$ is the vector of final, predicted landmarks, then
+the assumption is that this vector is ideally obtained by performing similarity
+transformation of the mean landmark $\mathbf{X}$. That is,
 
 \begin{equation}
   \begin{aligned}
@@ -38,8 +80,8 @@ this vector is ideally obtained by performing similarity transformation of the m
   \end{aligned}
 \end{equation}
 
-From this, we can finally extract the scale, rotation, and translation parameters of the
-arbitrary shape.
+From this, we can finally extract the scale, rotation, and translation
+parameters of the arbitrary shape.
 
 \begin{equation}
   \mathbf{M} = \widetilde{\mathbf{X}}\textbf{X}^{-1}
@@ -52,7 +94,8 @@ Given matrix $\mathbf{M}$, the following hold true:
 \end{equation*}
 
 \begin{equation*}
-  s = \frac{a}{\cos(\theta)} = -\frac{b}{\sin(\theta)} = \frac{c}{\sin(\theta)} = \frac{d}{\cos(\theta)}
+  s = \frac{a}{\cos(\theta)} =
+    -\frac{b}{\sin(\theta)} = \frac{c}{\sin(\theta)} = \frac{d}{\cos(\theta)}
 \end{equation*}
 
 \begin{equation*}
@@ -62,4 +105,8 @@ Given matrix $\mathbf{M}$, the following hold true:
   \end{bmatrix}
 \end{equation*}
 
+\section{Gaze estimation by coordinate transformation}
+ Our approach maximizes the objective function because it calculates the
+probability instead of loss
+\end{multicols}
 \end{document}
