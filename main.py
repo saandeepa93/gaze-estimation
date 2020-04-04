@@ -1,22 +1,19 @@
 import numpy as np
 import glob
+import pandas as pd
+
 from modules.preprocess import preprocessing
 from modules.triplet_init import init, load_train
 from modules.train import train_model
 from modules.onemillisecond import OneMS
 from modules.transformation import calc_transformation
-import pandas as pd
-
+from modules.regressor_tree import RegressorTree
 
 def denormalize(lms, mean_frontal):
   lms[:,0] *= ((mean_frontal[1][0] - mean_frontal[0][0]))
   lms[:,1] *= ((mean_frontal[1][1] - mean_frontal[0][1]))
   lms += mean_frontal[0]
   return lms.astype(np.int)
-
-mean_landmarks = np.load('./input/train/landmark_mean.npy')
-mean_frontal = np.load('./input/train/frontal/frontal_mean.npy')
-mean_landmarks = denormalize(mean_landmarks, mean_frontal)
 
 
 def get_primes(pts, mean_landmarks, mean_frontal, S):
@@ -63,6 +60,11 @@ def decision(I, shpe, theta):
   return int(np.sqrt(np.sum(np.square(dist))) > theta[0])
 
 
+mean_landmarks = np.load('./input/train/landmark_mean.npy')
+mean_frontal = np.load('./input/train/frontal/frontal_mean.npy')
+mean_landmarks = denormalize(mean_landmarks, mean_frontal)
+
+
 def main():
   # n = len(glob.glob1('./input/raw/train/', '*.png'))
   # preprocessing( './input/raw/train/', './input/train/')
@@ -95,9 +97,26 @@ def main():
   X = X.drop(['Survived', 'Cabin'], axis = 1)
 
 
-  print(X)
+def test():
+  arr_pd = pd.read_csv('./input/POC_data/bris.csv', header = None)
+  arr_pd[4] = pd.factorize(arr_pd[4])[0]
+  arr = arr_pd.to_numpy()
+  print(arr.shape)
+  np.random.shuffle(arr)
+  # X_train = arr[:,:-1]
+  # y_train = arr[:,-1]
+  X_train = arr[:125, :-1]
+  y_train = arr[:125, -1]
+  X_test = arr[125:, :-1]
+  y_test = arr[125:, -1]
 
+  r = RegressorTree(10)
+  r.fit(X_train, y_train)
+  r.print_tree(r.root)
+  print(r.tree_depth)
+  print(((sum(r.predict(X_test) == y_test)/ 25) * 100).round(2))
 
 
 if __name__ == '__main__':
-  main()
+  # main()
+  test()
