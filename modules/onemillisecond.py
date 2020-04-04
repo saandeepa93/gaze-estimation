@@ -1,4 +1,7 @@
 import numpy as np
+import sys
+
+from .regressor_tree import RegressorTree
 
 
 class F:
@@ -8,17 +11,6 @@ class F:
 
   def update(self, new_model):
     self.model = new_model
-
-  def predict(self, I, S):
-    return self.model
-
-
-class G:
-  def __init__(self ):
-    self.model = np.zeros((68,2))
-
-  def update(self, r):
-    pass
 
   def predict(self, I, S):
     return self.model
@@ -69,12 +61,15 @@ class OneMS:
     N = self.X_train.shape[0]
     K = 10
     eta = 0.3
-    f, g = F(self.get_dS() if r is None else r), G()
+    f = F(self.get_dS() if r is None else r)
     for k in range(K):
       r = np.zeros((N, 68, 2))
+      X = []
+      g = RegressorTree(20)
       for i in range(N):
         r[i,:,:] = self.X_train[i,0,2] - f.predict(self.X_train[i,0,0], \
           self.X_train[i,0,1])
-      g.update(r)
-      f.update(f.model + eta * g.model)
+        X.append((self.X_train[i,0,0], self.X_train[i,0,1]))
+      g.fit(np.array(X), r)
+      # f.update(f.model + eta * g.predict(np.array(X)))
     return f.model

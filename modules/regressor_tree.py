@@ -1,33 +1,32 @@
 import numpy as np
 import sys
 
-class Node:
-  def __init__(self, clas=0, left=None, right=None, threshold=0, gini=0,\
-    num_samples=0, class_freq=None, feature=0):
-    self.clas = clas
+class __Node__:
+  def __init__(self, val=0, left=None, right=None, \
+    num_samples=0, class_freq=None):
+    self.val = val
     self.left = None
     self.right = None
-    self.threshold = threshold
-    self.gini = gini
     self.num_samples = num_samples
     self.class_freq = class_freq
-    self.feature = feature
+    self.score = np.inf
 
   def print(self):
     print("self: ",self)
-    print("class: ", self.clas)
+    print("class: ", self.val)
     print("threshold: ", self.threshold)
-    print("gini index: ", self.gini)
     print("num_samples: ", self.num_samples)
     print("feature: ", self.feature)
     print("left: ", self.left)
     print("right: ", self.right)
+    print("score: ", self.score)
 
 
 class RegressorTree:
-  def __init__(self, depth):
+  def __init__(self, depth, min_samples = 5):
     self.depth = depth
     self.tree_depth = 0
+    self.min_samples = min_samples
 
   def __zipsort__(self, a, b):
     ab = np.hstack((a[:,np.newaxis], b[:,np.newaxis]))
@@ -57,48 +56,34 @@ class RegressorTree:
     """
     n = y.shape[0]
     best_feature, best_threshold = None, None
+    score = np.inf
     if n > 1:
-      g = self.__gini__(y)
-      class_freq = np.array([np.sum(y==k) for k in range(len(self.targets))])
       for i in range(self.num_features):
-        t, preds = self.__zipsort__(X[:,i], y.astype(np.int))
-        left_freq = np.zeros((len(self.targets)))
-        right_freq = np.copy(class_freq)
-        for j in range(1,n):
-
-          left_freq[preds[j-1]] +=1
-          right_freq[preds[j-1]] -= 1
-          left_gini = 1 - np.sum(np.square(left_freq/j))
-          right_gini = 1 - np.sum(np.square(right_freq/(n-j)))
-          if t[j] == t[j-1]:
+        t = X[:,i]
+        for j in range(n):
+          lhs = t <= t[j]
+          rhs = t > t[j]
+          if np.sum(lhs) < self.min_samples or np.sum(rhs) < self.min_samples:
             continue
-
-          new_g = ((i * left_gini) + (n-i) * right_gini)/n
-          if new_g < g:
-            g = new_g
+          new_score = np.std(y[lhs]) * np.sum(lhs) + np.std(y[rhs]) * np.sum(rhs)
+          if new_score < score:
+            score = new_score
             best_feature = i
-            best_threshold = (t[j] + t[j-1])/2
+            best_threshold = t[j]
 
-    return best_feature, best_threshold
-
-  def __gini__(self, y):
-    freq = np.unique(y, return_counts = True)[1]
-    return 1 - np.sum(np.square(freq/y.shape[0]))
+    return best_feature, best_threshold, score
 
   def __build_tree__(self, X, y, depth):
     z = y.shape[0]
-    n = Node(num_samples=z)
-    n.gini = self.__gini__(y)
+    n = __Node__(num_samples=z)
     n.class_freq = np.unique(y, return_counts = True)
-    n.clas = n.class_freq[0][np.argmax(n.class_freq[1])]
+    n.val = np.average(y)
     if depth < self.depth:
       if depth > self.tree_depth:
         self.tree_depth = depth
-      feature, threshold = self.__best_split__(X, y)
-      if feature is not None:
-        n.feature = feature
-        n.threshold = threshold
-        i = X[:, feature] < threshold
+      n.feature, n.threshold, n.score = self.__best_split__(X, y)
+      if n.score != np.inf:
+        i = X[:, n.feature] < n.threshold # Difference between intensities of 2 pixels
         X_left, y_left = X[i, :], y[i]
         X_right, y_right = X[~i,:], y[~i]
         if X_left.shape[0] != 0:
@@ -108,6 +93,7 @@ class RegressorTree:
     return n
 
   def fit(self, X, y):
+    return
     self.targets = np.unique(y)
     self.num_features = X.shape[1]
     self.root = self.__build_tree__(X, y, 0)
@@ -119,7 +105,8 @@ class RegressorTree:
         start = start.left
       else:
         start = start.right
-    return start.clas
+    return start.val
 
   def predict(self, X):
+    return
     return [self.__predict_per_item__(i) for i in X]
