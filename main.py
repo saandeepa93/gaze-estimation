@@ -3,6 +3,7 @@ import math
 import glob
 import pandas as pd
 import sys
+import random
 from sklearn.datasets import load_boston
 from sklearn.tree import DecisionTreeRegressor as DecisionTreeRegressor2
 
@@ -19,50 +20,6 @@ def denormalize(lms, mean_frontal):
   lms[:,1] *= ((mean_frontal[1][1] - mean_frontal[0][1]))
   lms += mean_frontal[0]
   return lms.astype(np.int)
-
-
-def get_primes(pts, mean_landmarks, mean_frontal, S):
-  closest_lm = np.zeros((pts.shape[0], 2))
-  dX = np.zeros((pts.shape[0], 2))
-  cur_lm = np.zeros((pts.shape[0], 2))
-  primes = np.zeros((pts.shape[0], 2))
-  pts[:,0] += mean_frontal[0][0]
-  pts[:,1] += mean_frontal[0][1]
-  cnt = 0
-
-  s, R, t = calc_transformation(mean_landmarks, S)
-  R_tmp = np.copy(R)
-  R_tmp[0,:] = R[0,:]/s[0]
-  R_tmp[1,:] = R[1,:]/s[1]
-  #TODO verify calculations
-  for i in pts:
-    temp = np.sum(np.square(mean_landmarks - i), axis = 1)
-    ind = np.argmin(temp)
-    dX[cnt,:] = mean_landmarks[ind,:] - S[ind,:]
-    closest_lm[cnt,:] = mean_landmarks[ind, :]
-    cur_lm[cnt,:] = S[ind, :]
-    cnt+=1
-
-  return (cur_lm.T + np.matmul(R_tmp.T, dX.T)).T
-
-
-def decision(I, shpe, theta):
-  """Given the input, the function returns a decision 0 or 1
-
-  Arguments:
-      I {np.array} -- Image
-      shpe {np.array} -- current estimate shape for I
-      theta {triplet} -- triplet of threshold and 2 locations: u,v
-  """
-  pts = np.array([
-    theta[1],
-    theta[2]
-  ])
-
-  primes = get_primes(pts, mean_landmarks, mean_frontal, shpe).astype(np.int)
-  #TODO handle out of bound prime indeces
-  dist = I[primes[0][0]][primes[0][1]] - I[primes[1][0]][primes[1][1]]
-  return int(np.sqrt(np.sum(np.square(dist))) > theta[0])
 
 
 mean_landmarks = np.load('./input/train/landmark_mean.npy')
@@ -87,7 +44,7 @@ def main():
   t = 1
   r = None
   X_train = load_train('./input/train/triplets.npy', 446)
-  oneMS = OneMS(0.3, 10)
+  oneMS = OneMS(mean_landmarks, mean_frontal, 0.3, 10)
   oneMS.fit(X_train)
 
 
@@ -148,5 +105,5 @@ def test():
 
 if __name__ == '__main__':
   main()
-  # test()
+  # test(
 

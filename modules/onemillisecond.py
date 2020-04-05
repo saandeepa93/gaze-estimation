@@ -17,9 +17,11 @@ class F:
 
 
 class OneMS:
-  def __init__(self, eta = 0.4, t = 10):
+  def __init__(self, mean_landmarks, mean_frontal, eta = 0.4, t = 10):
     self.eta = eta
     self.t = t
+    self.mean_landmarks = mean_landmarks
+    self.mean_frontal = mean_frontal
 
   def get_dS(self):
     return np.average(self.X_train[:,0,2], axis = 0)
@@ -61,11 +63,12 @@ class OneMS:
     N = self.X_train.shape[0]
     K = 10
     eta = 0.3
+    #TODO Figure out f0
     f = F(self.get_dS() if r is None else r)
     for k in range(K):
       r = np.zeros((N, 68, 2))
       X = []
-      g = RegressorTree(20)
+      g = RegressorTree(20, self.mean_landmarks, self.mean_frontal)
       for i in range(N):
         r[i,:,:] = self.X_train[i,0,2] - f.predict(self.X_train[i,0,0], \
           self.X_train[i,0,1])

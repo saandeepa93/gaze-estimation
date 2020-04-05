@@ -1,5 +1,5 @@
 import numpy as np
-
+import sys
 
 def calc_transformation(mean_landmarks, img_dlib):
   rot = np.zeros((2, 2))
@@ -12,8 +12,14 @@ def calc_transformation(mean_landmarks, img_dlib):
   img_dlib = np.hstack((img_dlib, \
     np.ones((img_dlib.shape[0], 1)))).astype(np.int)
 
-  P = np.matmul(np.matmul(np.linalg.inv(np.matmul(img_dlib.T, img_dlib)),\
-     img_dlib.T), mean_landmarks).round(1).T
+  #TODO check if SVD is working
+  return np.array([1, 1]), np.array([[1, 0], [0, 1]]), np.array([10.8, 0.55])
+  M_sq = np.matmul(img_dlib.T, img_dlib)
+  # U, S, V_t = np.linalg.svd(M_sq)
+  # S_inv = np.linalg.inv(np.diag(S))
+  # sys.exit(0)
+  # M_inv = np.matmul(np.matmul(V_t.T, S_inv), U.T)
+  P = np.matmul(np.matmul(M_sq, img_dlib.T), mean_landmarks).round(1).T
 
   theta = np.arctan(P[1][0]/P[0][0])
 
