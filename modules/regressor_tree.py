@@ -86,7 +86,8 @@ class RegressorTree:
       theta[2]
     ])
 
-    primes = self.__get_primes__(pts, self.mean_landmarks, self.mean_frontal, shpe).astype(np.int)
+    primes = self.__get_primes__(pts, self.mean_landmarks, \
+      self.mean_frontal, shpe).astype(np.int)
     #TODO handle out of bound prime indeces
     dist = I[primes[0][0]][primes[0][1]] - I[primes[1][0]][primes[1][1]]
     return int(np.sqrt(np.sum(np.square(dist))) > theta[0])
@@ -109,17 +110,18 @@ class RegressorTree:
     best_feature, best_threshold = None, None
     score = 0
     if n > 1:
-      thetas = [(random.sample(range(1,100), 1)[0], b[0:2], b[2:]) for b in np.random.rand(10, 4)]
+      thetas = [(random.sample(range(1,100), 1)[0], b[0:2], b[2:]) \
+        for b in np.random.rand(10, 4)]
       for i in thetas:
         t = np.arange(n)
         mu = np.sum(y, axis = 0)
         lhs = []
         rhs = []
-        for observation in range(n):
-          if self.__decision__(X[observation,:][0], X[observation,:][1], i) == 0:
-            lhs.append(observation)
+        for obsrvtn in range(n):
+          if self.__decision__(X[obsrvtn,:][0], X[obsrvtn,:][1], i) == 0:
+            lhs.append(obsrvtn)
           else:
-            rhs.append(observation)
+            rhs.append(obsrvtn)
         num_lhs = len(lhs)
         num_rhs = len(rhs)
         if num_lhs < self.min_samples or num_rhs < self.min_samples:

@@ -9,9 +9,12 @@ def cost_func(dS, gamma):
 
 def load_img(val, val2, img):
   lm_mean = np.load('./input/train/frontal/frontal_mean.npy')
-  xmin, ymin, xmax, ymax = lm_mean[0][0], lm_mean[0][1], lm_mean[1][0], lm_mean[1][1]
-  gamma = (val * np.array([xmax - xmin, ymax - ymin]) + np.array([xmin, ymin])).astype(np.int)
-  dS = (val2 * np.array([xmax - xmin, ymax - ymin]) + np.array([xmin, ymin])).astype(np.int)
+  xmin, ymin = lm_mean[0][0], lm_mean[0][1]
+  xmax, ymax = lm_mean[1][0], lm_mean[1][1]
+  gamma = (val * np.array([xmax - xmin, ymax - ymin]) + \
+    np.array([xmin, ymin])).astype(np.int)
+  dS = (val2 * np.array([xmax - xmin, ymax - ymin]) + \
+    np.array([xmin, ymin])).astype(np.int)
 
 def train_model(X_train):
   eta = np.array([0.1, 0.1])

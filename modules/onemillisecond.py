@@ -42,8 +42,7 @@ class OneMS:
     for i in range(self.t):
       r = self.__cascade__(r)
 
-    #TODO: to be removed
-    return r
+    self.final_model = r
 
   def predict(self, I):
 
