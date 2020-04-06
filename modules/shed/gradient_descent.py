@@ -1,48 +1,37 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import random
+import cv2
+import sys
+import cv2
 
+def cost_func(dS, gamma):
+  return np.sum(np.sqrt(np.sum(np.square(dS - gamma), axis = 1))), \
+          dS - gamma
 
-def cost_func(v):
-  return np.sum(np.sqrt(np.sum(np.square(v), axis = 1)))
+def load_img(val, val2, img):
+  lm_mean = np.load('./input/train/frontal/frontal_mean.npy')
+  xmin, ymin = lm_mean[0][0], lm_mean[0][1]
+  xmax, ymax = lm_mean[1][0], lm_mean[1][1]
+  gamma = (val * np.array([xmax - xmin, ymax - ymin]) + \
+    np.array([xmin, ymin])).astype(np.int)
+  dS = (val2 * np.array([xmax - xmin, ymax - ymin]) + \
+    np.array([xmin, ymin])).astype(np.int)
 
+def train_model(X_train):
+  eta = np.array([0.1, 0.1])
+  dS = np.average(X_train[:,0,2], axis = 0)
+  gamma_old = gamma_new = np.random.rand(68, 2)
 
-def find_minima(x):
-  #small change
-  del_x = 2 * np.pi/180
-  eta = 0.1
-  plt.plot(x, cost_func(x))
-
-  count, epoch = 0, 5
-  global_min = 0
-
+  delta_gamma = np.ones((68, 2))
   while True:
-    count += 1
+    img = cv2.imread('./input/raw/train/frame1.png')
+    load_img(gamma_old, gamma_old, img)
 
-    x_new = x_rand = random.randrange(0, 500) * np.pi/180
-    plt.scatter(x_rand, cost_func(x_rand), color = 'orange')
-
-    old_cost = 9e9
-
-    while True:
-      gradient = cost_func(x_rand + del_x) - cost_func(x_rand)
-
-      x_new = x_new - eta * gradient
-      plt.scatter(x_new, cost_func(x_new), color = 'green')
-
-      if cost_func(x_new) > old_cost:
-        break
-
-      old_cost = cost_func(x_new)
-      x_rand = x_new
-
-    if cost_func(x_new) < cost_func(global_min):
-      global_min = x_new
-
-    if count == epoch:
+    cost, gradient = cost_func(dS, gamma_old)
+    gamma_new = gamma_old + eta * gradient
+    new_cost, new_gradient = cost_func(dS, gamma_new)
+    if new_cost >= cost:
       break
+    cost = new_cost
+    gamma_old = gamma_new
 
-    plt.scatter(global_min, cost_func(global_min), color='red')
-  plt.show()
-
-find_minima(2)
+  return gamma_old, dS

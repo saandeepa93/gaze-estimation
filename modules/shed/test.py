@@ -1,7 +1,10 @@
 import numpy as np
 from numpy import cos, sin, pi
 import matplotlib.pyplot as plt
-import modules.transformation as tran
+import sys
+# import modules.transformation as tran
+import cv2
+import skimage.transform as tf
 
 
 lm = np.array([
@@ -13,14 +16,15 @@ lm = np.array([
   [3, 6]
 ])
 
-theta = 90 * np.pi/180
+theta = 45 * np.pi/180
 
 s = 2
 r = np.array([
-  [s * cos(theta), s * -sin(theta), 1],
+  [s * cos(theta), s * -sin(theta), 5],
   [s * sin(theta),s * cos(theta), 1],
   [0, 0, 1],
 ])
+print(r)
 lm = np.hstack((lm, np.ones((lm.shape[0], 1))))
 lm2 = (np.matmul(r, lm.T)[:-1,:])
 
@@ -38,24 +42,26 @@ B = np.array([
   [8, 8],
   [2, 4],
   [3, 6]
-])
+], np.float32)
 
 A = np.array([
  [ -3,   5],
  [ -7,   9],
  [-11,  13],
- [-15,  17],
- [ -7,   5],
- [-11,   7]
-])
+ [-15,  17]
+], np.float32)
 
-A = np.hstack((A, np.ones((A.shape[0], 1))))
-B = np.hstack((B, np.ones((B.shape[0], 1))))
+A = lm2.T.astype(np.float32)
 
-print(A.shape, B.shape)
-P = np.matmul(np.matmul(np.linalg.inv(np.matmul(B.T, B)), B.T), A).round(1).T
+# A = np.hstack((A, np.ones((A.shape[0], 1)))).astype(float)
+# B = np.hstack((B, np.ones((B.shape[0], 1)))).astype(float)
+# P = np.matmul(np.matmul(np.linalg.inv(np.matmul(B.T, B)), B.T), A).round(1).T
 
-#TODO separate scale for x and y.
+
+P = tf.estimate_transform('similarity' ,B, A)
+print(P.params)
+
+sys.exit(0)
 theta = np.arctan(P[1][0]/P[0][0])
 print(theta * 180/pi)
 scale = P[1][0] / sin(theta)
