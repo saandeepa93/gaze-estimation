@@ -1,5 +1,6 @@
 import numpy as np
-
+import pickle as rick
+import joblib
 from .regressor_tree import RegressorTree
 from .gradient_boost import GradientBoost
 
@@ -41,6 +42,8 @@ class OneMS:
 
     self.final_model = r
 
+  def print(self):
+    self.final_model.print()
 
   def predict(self, I):
 
@@ -58,7 +61,8 @@ class OneMS:
 
 
   def __cascade__(self, r = None):
-    N = self.X_train.shape[0]
+    # print("cascade")
+    N = 100#self.X_train.shape[0]
     f = GradientBoost(c = self.get_dS()) if r is None else r
     for k in range(self.K):
       print(k)

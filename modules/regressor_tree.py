@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import dlib
 
 from .transformation import calc_transformation
 
@@ -10,6 +11,8 @@ class __Node__:
     self.right = None
     self.num_samples = num_samples
     self.score = 0
+    self.feature = None
+    self.threshold = None
 
   def print(self):
     print("self: ",self)
@@ -38,9 +41,9 @@ class RegressorTree:
   def print_tree(self, root):
     if root.left is not None:
       self.print_tree(root.left)
-    print("---------------------")
+    # print("---------------------")
     root.print()
-    print("---------------------")
+    # print("---------------------")
     if root.right is not None:
       self.print_tree(root.right)
 
@@ -85,6 +88,8 @@ class RegressorTree:
       theta[1],
       theta[2]
     ])
+    # if pts.shape == (2,):
+    #   print("$$$: ", pts.shape)
 
 
     primes = self.__get_primes__(pts, self.mean_landmarks, shpe)
@@ -160,16 +165,22 @@ class RegressorTree:
     self.root = self.__build_tree__(X, y, 0)
 
 
-  def __predict_per_item__(self, item):
-    return self.root.val #TODO fix this
-    start = self.roots
+  def __predict_per_item__(self, item, S):
+    start = self.root
+    detector = dlib.get_frontal_face_detector()
+    dets = detector(item, 1)
+    if len(dets) != 0:
+      for d in dets:
+        F = np.array([[d.left(), d.top()],[d.bottom(), d.right()]])
+    else:
+      return np.zeros((68,2))
     while start is not None and start.left is not None:
-      if item[start.feature] < start.threshold:
+      if self.__decision__(item, S, F, start.feature) == 0:
         start = start.left
       else:
         start = start.right
-    return start.val
+    return self.__denormalize__(S - start.val, F)
 
 
   def predict(self, X):
-    return [self.__predict_per_item__(i) for i in X]
+    return [self.__predict_per_item__(i[0], i[1]) for i in X]

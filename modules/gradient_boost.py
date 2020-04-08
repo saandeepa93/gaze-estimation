@@ -10,13 +10,11 @@ class GradientBoost:
     self.models.append((eta, r))
 
 
-  def save_model(self):
-    #TODO figure this out
-    pass
-
+  def print(self):
+    print(len(self.models))
 
   def predict(self, I, S):
     result = self.c
     for (eta, model) in self.models:
-      result += (eta * model.predict((I, S))[0])
+      result += (eta * model.predict(np.array([(I, S)]))[0])
     return result
