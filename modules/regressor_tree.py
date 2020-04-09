@@ -4,6 +4,8 @@ import dlib
 
 from .transformation import calc_transformation
 
+detector = dlib.get_frontal_face_detector()
+
 class __Node__:
   def __init__(self, val=0, left=None, right=None, num_samples=0):
     self.val = val
@@ -48,8 +50,10 @@ class RegressorTree:
       self.print_tree(root.right)
 
   def __denormalize__(self, lms, bbox):
-    lms[:,0] *= ((bbox[1][0] - bbox[0][0]))
-    lms[:,1] *= ((bbox[1][1] - bbox[0][1]))
+    xmin, ymin = bbox[0][0], bbox[0][1]
+    xmax, ymax = bbox[1][0], bbox[1][1]
+    lms[:,0] *= (xmax - xmin)
+    lms[:,1] *= (ymax - ymin)
     lms += bbox[0]
     return lms.astype(np.int)
 
@@ -57,11 +61,10 @@ class RegressorTree:
 
   def __get_primes__(self, pts, mean_landmarks, S):
     dX = np.zeros((pts.shape[0], 2))
+    dX2 = np.zeros((pts.shape[0], 2))
     cur_lm = np.zeros((pts.shape[0], 2))
     primes = np.zeros((pts.shape[0], 2))
     cnt = 0
-
-
     s, R, t = calc_transformation(mean_landmarks, S)
     K = np.copy(R)
     K[0,:] = R[0,:]/s[0]
@@ -70,9 +73,10 @@ class RegressorTree:
       temp = np.sum(np.square(mean_landmarks - u), axis = 1)
       ku = np.argmin(temp)
       dX[cnt,:] = mean_landmarks[ku,:] - S[ku,:]
+      dX2[cnt,:] = mean_landmarks[ku,:]
       cur_lm[cnt,:] = S[ku, :]
       cnt+=1
-    return (cur_lm.T + np.matmul(K, dX.T)).T
+    return (cur_lm.T + np.matmul(K, dX.T)).T, dX2
 
 
 
@@ -88,17 +92,17 @@ class RegressorTree:
       theta[1],
       theta[2]
     ])
-    # if pts.shape == (2,):
-    #   print("$$$: ", pts.shape)
 
-
-    primes = self.__get_primes__(pts, self.mean_landmarks, shpe)
-
-    pts = self.__denormalize__(pts, frontal).astype(np.int)
-    primes = self.__denormalize__(primes, frontal).astype(np.int)
-
-
-    dist = I[primes[0][0]][primes[0][1]] - I[primes[1][0]][primes[1][1]]
+    primes, zz = self.__get_primes__(pts, self.mean_landmarks, shpe)
+    pts = self.__denormalize__(np.copy(pts), frontal).astype(np.int)
+    primes = self.__denormalize__(np.copy(primes), frontal).astype(np.int)
+    # mean_lm = self.__denormalize__(np.copy(self.mean_landmarks), frontal)
+    r, c, _ = I.shape
+    a = max(0, min(r-1, primes[1][1]))
+    b = max(0, min(r-1, primes[0][1]))
+    d = max(0, min(c-1, primes[1][0]))
+    e = max(0, min(c-1, primes[0][0]))
+    dist = I[b][e] - I[a][d]
     return int(np.sqrt(np.sum(np.square(dist))) > theta[0])
 
 
@@ -167,7 +171,6 @@ class RegressorTree:
 
   def __predict_per_item__(self, item, S):
     start = self.root
-    detector = dlib.get_frontal_face_detector()
     dets = detector(item, 1)
     if len(dets) != 0:
       for d in dets:
@@ -179,7 +182,7 @@ class RegressorTree:
         start = start.left
       else:
         start = start.right
-    return self.__denormalize__(S - start.val, F)
+    return self.__denormalize__(S + start.val, F)
 
 
   def predict(self, X):

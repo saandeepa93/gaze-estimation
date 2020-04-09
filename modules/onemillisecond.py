@@ -61,11 +61,9 @@ class OneMS:
 
 
   def __cascade__(self, r = None):
-    # print("cascade")
-    N = 100#self.X_train.shape[0]
+    N = 50#self.X_train.shape[0]
     f = GradientBoost(c = self.get_dS()) if r is None else r
     for k in range(self.K):
-      print(k)
       r = np.zeros((N, 68, 2))
       X = []
       g = RegressorTree(self.d, self.t_count, self.mean_landmarks)

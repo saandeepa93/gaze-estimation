@@ -27,18 +27,21 @@ def show_img(img, landmarks, mean_frontal):
 
 
 def preprocessing(filepath, dest):
-  def get_landmarks(frame):
+  def get_landmarks(frame, cnt):
     landmark = np.zeros((68, 2))
     frontal = np.zeros((2,2))
-    cnt = 0
     for d,shape in [(d, predictor(frame, d)) for _,d in \
       enumerate(detector(frame, 1))]:
+      xmin, ymin = d.left() - 10, d.top() - 10
+      xmax, ymax = d.right() + 10, d.bottom() + 10
+      if xmax > 840 or ymax > 480:
+        print("true")
       for i in range(shape.num_parts):
           landmark[i,:] = np.array([shape.part(i).x, shape.part(i).y]) - \
-            np.array([d.left(), d.top()])
-          landmark[i,0] /= (d.right() - d.left())
-          landmark[i,1] /= (d.bottom() - d.top())
-      frontal = np.array([[d.left(), d.top()],[d.bottom(), d.right()]])
+            np.array([xmin, ymin])
+          landmark[i,0] /= (xmax - xmin)
+          landmark[i,1] /= (ymax - ymin)
+      frontal = np.array([[xmin, ymin],[xmax, ymax]])
     return landmark, frontal
 
   tot = len(glob.glob1(filepath,'*.png'))
@@ -50,11 +53,10 @@ def preprocessing(filepath, dest):
     print(fname)
     sub = fname.split('/')[-1]
     img = cv2.imread(fname)
-    landmarks[cnt,:,:], frontals[cnt,:,:] = get_landmarks(img)
+    landmarks[cnt,:,:], frontals[cnt,:,:] = get_landmarks(img, cnt)
     dob = np.array([(img, landmarks[cnt], frontals[cnt])])
     np.save(dest+sub, dob)
     cnt+=1
-
   landmarks_mean = np.average(landmarks, axis = 0)
   np.save('./input/train/frontal/frontal.npy', frontals)
   np.save('./input/train//frontal/landmark_mean.npy', landmarks_mean)

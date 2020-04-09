@@ -19,6 +19,7 @@ def init(R, n, filepath):
     I.append(np.load(fname, allow_pickle=True)[0][0])
     F.append(np.load(fname, allow_pickle=True)[0][2])
 
+
   for i in range(n):
     s = list(np.arange(1,n))
     random.shuffle(s)

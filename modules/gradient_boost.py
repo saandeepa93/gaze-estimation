@@ -14,7 +14,7 @@ class GradientBoost:
     print(len(self.models))
 
   def predict(self, I, S):
-    result = self.c
+    result = np.copy(self.c)
     for (eta, model) in self.models:
       result += (eta * model.predict(np.array([(I, S)]))[0])
     return result
